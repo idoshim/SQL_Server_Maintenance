@@ -1,0 +1,25 @@
+USE MASTER
+declare
+	@isql varchar(2000),
+
+	@dbname varchar(64),
+	@logfile varchar(128),
+	@go varchar(128);
+
+
+declare c1 cursor for
+SELECT  a.name , t.name,
+t.physical_name AS Logical from sys.master_files t
+inner join sys.databases a on a.database_id = t.database_id
+--where a.database_id > 4
+and t.physical_name like 'G:\%'
+open  c1 
+fetch next from c1 into @dbname, @logfile, @go
+While @@fetch_status <> -1
+begin 
+select @isql = 'EXEC sp_detach_db ' + @dbname + ' true WITH ROLLBACK IMMEDIATE;'
+print @isql
+fetch next from c1 into @dbname ,@logfile,@go
+end
+close c1
+deallocate c1
