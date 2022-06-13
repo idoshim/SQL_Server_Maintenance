@@ -1,0 +1,35 @@
+USE MASTER
+declare
+	@isql varchar(2000),
+
+	@dbname varchar(64),
+	@logfile varchar(128),
+	@go varchar(128),
+	@DATA VARCHAR (128),
+	@DATA_PATH varchar(128),
+	@LOG_PATH varchar(128),
+	@FULL_LOG_PATH varchar(128);
+
+declare c1 cursor for
+SELECT  a.name , t.name,
+t.physical_name AS Logical from sys.master_files t
+inner join sys.databases a on a.database_id = t.database_id
+where a.database_id > 4
+open  c1 
+fetch next from c1 into @dbname, @logfile, @go
+While @@fetch_status <> -1
+begin
+SET @DATA  = 'D:\MSSQL\data\'
+SET @LOG_PATH =' I:\MSSQL.General2k16\MSSQL\Data\'
+SET @DATA_PATH = @DATA + @dbname  
+SET @DFULL_LOG_PATH = @LOG_PATH + @dbname  
+
+select @isql = 'CREATE DATABASE ' + @dbname + ' ON ( filename = '  + @DATA_PATH + '.mdf),  
+  (FILENAME = ' + @DATA_LOG_PATH + '.ldf)   
+   FOR ATTACH;' 
+print @isql
+fetch next from c1 into @dbname ,@logfile,@go
+end
+close c1
+deallocate c1
+
