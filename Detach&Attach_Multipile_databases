@@ -1,0 +1,100 @@
+--Run part 1 and then move the databases to the new folders.
+--after it run part 2
+
+--part 1
+
+
+USE [master]
+GO
+
+/****** Object:  Table [dbo].[DB_names]    Script Date: 1/24/2024 4:16:44 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='DB_names' and xtype='U')
+	CREATE TABLE [dbo].[DB_names](
+		[name] [nvarchar](100) NULL
+	) ON [PRIMARY]
+GO
+
+truncate table DB_names
+GO
+
+insert into master.dbo.db_names
+SELECT name 
+FROM sys.databases
+WHERE database_id > 4  -- Exclude system databases
+  AND name NOT IN ('master', 'tempdb', 'model', 'msdb');
+
+
+USE master;
+GO
+
+DECLARE @dbName NVARCHAR(20);
+DECLARE @detachCmd NVARCHAR(MAX);
+DECLARE @attachCmd NVARCHAR(MAX);
+DECLARE @single NVARCHAR(MAX);
+
+-- Detach databases
+DECLARE detachCursor CURSOR FOR
+SELECT name from  master.dbo.db_names
+OPEN detachCursor;
+
+FETCH NEXT FROM detachCursor INTO @dbName;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	SET @single ='ALTER DATABASE '+ @dbName +' SET SINGLE_USER WITH ROLLBACK IMMEDIATE'
+	EXEC(@single)
+    SET @detachCmd = 'EXEC sp_detach_db ''' + @dbName + ''';';
+    EXEC(@detachCmd);
+    FETCH NEXT FROM detachCursor INTO @dbName;
+END
+
+CLOSE detachCursor;
+DEALLOCATE detachCursor;
+
+
+--part 2
+
+-- Move database files to new folders (adjust paths accordingly)
+
+
+USE master;
+GO
+
+
+DECLARE @dbName NVARCHAR(20);
+DECLARE @detachCmd NVARCHAR(MAX);
+DECLARE @attachCmd NVARCHAR(MAX);
+DECLARE @single NVARCHAR(MAX);
+DECLARE @RWCMD NVARCHAR(MAX);
+DECLARE @MultiCMD NVARCHAR(MAX);
+
+
+-- Attach databases
+DECLARE attachCursor CURSOR FOR
+SELECT distinct TRIM(name) from  master.dbo.db_names
+OPEN attachCursor;
+FETCH NEXT FROM attachCursor INTO @dbName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+   SET @attachCmd = 'CREATE DATABASE '+@dbName+' ON ' +
+                   '(FILENAME=''C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\DATA\'+@dbName+'.mdf''),' + --Change to your DATA directory 
+                   '(FILENAME=''C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\LOG\'+@dbName+'_log.ldf'')' + --Change to your LOG directory 
+                  'FOR ATTACH;';
+	SET @MultiCMD = 'ALTER DATABASE '+ @dbName +' SET MULTI_USER;'
+	SET @RWCMD =  'ALTER DATABASE '+ @dbName +' SET READ_WRITE;'
+     print(@attachCmd)
+     EXEC(@attachCmd);
+     EXEC(@MultiCMD);
+    FETCH NEXT FROM attachCursor INTO @dbName;
+END
+
+CLOSE attachCursor;
+DEALLOCATE attachCursor;
+
+
+select * from DB_names
