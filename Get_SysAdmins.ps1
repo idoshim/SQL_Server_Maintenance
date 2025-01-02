@@ -2,7 +2,7 @@
 $inputTxtFile = "C:\Ido\Source_files\Servers_Instances.txt"  # Replace with your file path
 
 # Path to the output CSV file
-$outputCsvFile = "C:\Ido\Results\SysAdminsList$(Get-Date -Format "yyyyMMdd").csv"
+$outputCsvFile = "C:\Ido\Results\SysAdminsList$(Get-Date -Format "yyyyMMdd").csv"  #replace with your output folder
 
 # Initialize an empty array to store the results
 $sysAdminResults = @()
@@ -21,13 +21,11 @@ $query = @"
 SELECT name, type_desc, is_disabled
 FROM master.sys.server_principals 
 WHERE IS_SRVROLEMEMBER ('sysadmin', name) = 1
-AND name NOT IN ('SOLAREDGE\DB-Admin', 'SESU', 'NT SERVICE\Winmgmt')
+AND name NOT IN ('SOLAREDGE\DB-Admin', 'NT SERVICE\Winmgmt')
 --AND name NOT LIKE '%NT SERVICE%'
 --AND name NOT LIKE '%NT AUTHORITY%'
 AND name NOT LIKE '%Domain Admins%'
-AND name NOT LIKE '%svc_cvdb%'
 AND name NOT LIKE '%SQLWriter%'
-AND name NOT LIKE 'SVC_%DB'
 AND is_disabled <> 1
 ORDER BY name, type_desc
 "@
